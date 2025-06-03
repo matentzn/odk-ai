@@ -27,7 +27,7 @@ ensure-gh-token:
 
 build: ensure-gh-token
 	docker build $(CACHE) --platform $(ARCH) \
-		--build-arg GH_TOKEN=$(GH_TOKEN)
+		--build-arg GH_TOKEN=$(GH_TOKEN) \
 	    $(TAGS_OPTION) \
 	    .
 
