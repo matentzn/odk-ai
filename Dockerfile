@@ -1,4 +1,4 @@
-FROM obolibrary/odkfull:latest
+FROM obolibrary/odkfull:v1.6
 
 # Install git and dependencies
 RUN apt-get update && apt-get install -y \
