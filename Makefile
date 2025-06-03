@@ -13,20 +13,35 @@ VERSION = v0.1
 IM=cmungall/odk-ai
 TAGS_OPTION=-t $(IM):$(VERSION) -t $(IM):latest
 
-.PHONY: build build-no-cache build-dev clean
+.PHONY: build build-no-cache build-dev build-dev-no-cache clean ensure-gh-token
 
-build:
+# Ensure GH_TOKEN is set
+
+ensure-gh-token:
+	@if [ -z "$$GH_TOKEN" ]; then \
+		echo "ERROR: GH_TOKEN environment variable is not set"; \
+		echo "Please set it with: export GH_TOKEN=your_github_token"; \
+		echo "You can create a token at https://github.com/settings/tokens"; \
+		exit 1; \
+	fi
+
+build: ensure-gh-token
 	docker build $(CACHE) --platform $(ARCH) \
+		--build-arg GH_TOKEN=$(GH_TOKEN)
 	    $(TAGS_OPTION) \
 	    .
 
 build-no-cache:
 	$(MAKE) build CACHE=--no-cache
 
-build-dev:
+build-dev: ensure-gh-token
 	docker build $(CACHE) --platform $(ARCH) \
+		--build-arg GH_TOKEN=$(GH_TOKEN) \
 		-t $(IM):dev \
 		.
+
+build-dev-no-cache:
+	$(MAKE) build CACHE=--no-cache
 
 clean:
 	docker rm -f $(IM) || true
@@ -35,15 +50,16 @@ clean:
 
 .PHONY: publish-multiarch publish-multiarch-dev test
 
-publish-multiarch:
+publish-multiarch: ensure-gh-token
 	$(MAKE) reset-multiarch
 	docker buildx build $(CACHE) --push --platform $(PLATFORMS) \
 	    $(TAGS_OPTION) \
 	    .
 
-publish-multiarch-dev:
+publish-multiarch-dev: ensure-gh-token
 	$(MAKE) reset-multiarch
 	docker buildx build $(CACHE) --push --platform $(PLATFORMS) \
+		--build-arg GH_TOKEN=$(GH_TOKEN) \
 		-t $(IM):dev \
 		.
 
@@ -87,6 +103,7 @@ help:
 	@echo "  • build                 - Build the image for your local architecture"
 	@echo "  • build-no-cache        - Build the image without using cache"
 	@echo "  • build-dev             - Build the image tagged as 'dev'"
+	@echo "  • build-dev-no-cache    - Build the 'dev' image without using cache"
 	@echo "  • clean                 - Remove any running/stopped container with image name"
 	@echo "  • publish-multiarch     - Publish multi-architecture images (latest + version)"
 	@echo "  • publish-multiarch-dev - Publish multi-architecture image tagged as 'dev'"
